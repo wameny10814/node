@@ -1,3 +1,4 @@
+//node內建直接寫id
 const http =require('http')
 const server =http.createServer((req, res)=>{
     res.writeHead(200,{
