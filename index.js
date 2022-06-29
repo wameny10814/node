@@ -6,7 +6,10 @@ const multer = require("multer");
 const upload = require(__dirname + "/modules/upload-images");
 const session = require('express-session');
 const moment = require('moment-timezone');
-
+const {
+        toDateString,
+        toDatetimeString,
+    } = require(__dirname + '/modules/date-tools');
 const db = require(__dirname + '/modules/mysql-connect');
 const MysqlStore = require('express-mysql-session')(session);
 const sessionStore = new MysqlStore({}, db);
@@ -19,7 +22,11 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use((req, res, next)=>{
-    res.locals.shinder = '哈囉';
+    // res.locals.shinder = '哈囉';
+
+    // template helper functions
+    res.locals.toDateString = toDateString;
+    res.locals.toDatetimeString = toDatetimeString;
     next();
 });
 //session設定
@@ -128,6 +135,9 @@ app.use('/admins', require(__dirname + '/routes/admins'));
 //use接受各種方式拜訪
 app.use(express.static("public"));
 app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
+//routs address-book
+app.use('/address-book', require(__dirname + '/routes/address-book'));
+
 //get只接受用戶端用get拜訪
 app.get("/", function (req, res) {
     res.render("main", { name: " shinder" });

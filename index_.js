@@ -111,6 +111,10 @@ app.get('/try-session', (req, res)=>{
     });
 })
 
+app.use('/address-book', require(__dirname + '/routes/address-book'));
+
+
+
 app.get("/", (req, res) => {
     res.render("main", { name: "Shinder" });
 });
