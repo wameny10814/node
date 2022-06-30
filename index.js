@@ -4,15 +4,14 @@ const express = require("express");
 const multer = require("multer");
 // const upload = multer({dest: 'tmp-uploads'});
 const upload = require(__dirname + "/modules/upload-images");
-const session = require('express-session');
-const moment = require('moment-timezone');
-const {
-        toDateString,
-        toDatetimeString,
-    } = require(__dirname + '/modules/date-tools');
-const db = require(__dirname + '/modules/mysql-connect');
-const MysqlStore = require('express-mysql-session')(session);
+const session = require("express-session");
+const moment = require("moment-timezone");
+const { toDateString, toDatetimeString } = require(__dirname +
+    "/modules/date-tools");
+const db = require(__dirname + "/modules/mysql-connect");
+const MysqlStore = require("express-mysql-session")(session);
 const sessionStore = new MysqlStore({}, db);
+const axios = require("axios");
 
 const app = express();
 //設定
@@ -21,7 +20,7 @@ app.set("view engine", "ejs");
 //資料進來依照content type去做解析
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-app.use((req, res, next)=>{
+app.use((req, res, next) => {
     // res.locals.shinder = '哈囉';
 
     // template helper functions
@@ -30,15 +29,25 @@ app.use((req, res, next)=>{
     next();
 });
 //session設定
-app.use(session({
-    saveUninitialized: false,
-    resave: false,
-    secret: 'dkfdl85493igdfigj945739gfdgdfgdg4573irherer',
-    store: sessionStore,
-    cookie:{
-        maxAge:1200000,//存活時間
-    }
-}));
+app.use(
+    session({
+        saveUninitialized: false,
+        resave: false,
+        secret: "dkfdl85493igdfigj945739gfdgdfgdg4573irherer",
+        store: sessionStore,
+        cookie: {
+            maxAge: 1200000, //存活時間
+        },
+    })
+);
+
+app.get("/yahoo", async (req, res) => {
+    axios.get("https://tw.yahoo.com/").then(function (response) {
+        // handle success
+        console.log(response);
+        res.send(response.data);
+    });
+});
 
 //middleware 中介軟體
 //urlencoded 生成處理器
@@ -65,61 +74,59 @@ app.post("/try-upload", upload.single("avatar"), (req, res) => {
     res.json(req.file);
 });
 //上傳檔案-多張
-app.post("/try-uploads", upload.array('photos'), (req, res) => {
+app.post("/try-uploads", upload.array("photos"), (req, res) => {
     res.json(req.files);
 });
 
 //url以參數params設定
 //定義越寬鬆放後面,越精確specific越前面
-app.get('/try-params1/:action/:id?', (req, res)=>{
-    res.json({code:2, params: req.params});
-})
-app.get('/try-params1/:action', (req, res)=>{
-    res.json({code:3, params: req.params});
-})
-app.get('/try-params1/:action?/:id?', (req, res)=>{
-    res.json({code:1, params: req.params});
+app.get("/try-params1/:action/:id?", (req, res) => {
+    res.json({ code: 2, params: req.params });
+});
+app.get("/try-params1/:action", (req, res) => {
+    res.json({ code: 3, params: req.params });
+});
+app.get("/try-params1/:action?/:id?", (req, res) => {
+    res.json({ code: 1, params: req.params });
 });
 //使用regular expression設定url
-app.get(/^\/hi\/?/i, (req, res)=>{
-    res.send({url: req.url});
+app.get(/^\/hi\/?/i, (req, res) => {
+    res.send({ url: req.url });
 });
 //複數路由進到同一個處理器的場合
-app.get(['/aaa', '/bbb'], (req, res)=>{
-    res.send({url: req.url, code:'array'});
+app.get(["/aaa", "/bbb"], (req, res) => {
+    res.send({ url: req.url, code: "array" });
 });
 
-
-app.get('/try-json', (req, res)=>{
-    const data = require(__dirname + '/data/data01');
+app.get("/try-json", (req, res) => {
+    const data = require(__dirname + "/data/data01");
     console.log(data);
     // res.json(data);
     res.locals.rows = data;
-    res.render('try-json');
+    res.render("try-json");
 });
 
-
-app.get('/try-moment', (req, res)=>{
-    const fm = 'YYYY-MM-DD HH:mm:ss';
+app.get("/try-moment", (req, res) => {
+    const fm = "YYYY-MM-DD HH:mm:ss";
     const m1 = moment();
-    const m2 = moment('2022-02-28');
+    const m2 = moment("2022-02-28");
 
     res.json({
         m1: m1.format(fm),
-        m1a: m1.tz('Europe/London').format(fm),
+        m1a: m1.tz("Europe/London").format(fm),
         m2: m2.format(fm),
-        m2a: m2.tz('Europe/London').format(fm),
-    })
+        m2a: m2.tz("Europe/London").format(fm),
+    });
 });
 
 //路由模組化
-const adminsRouter = require(__dirname + '/routes/admins');
+const adminsRouter = require(__dirname + "/routes/admins");
 // prefix 前綴路徑
-app.use('/admins', adminsRouter);
+app.use("/admins", adminsRouter);
 app.use(adminsRouter);
 
 //測試session
-app.get('/try-session', (req, res)=>{
+app.get("/try-session", (req, res) => {
     //my_var為變數 不要設定為cookie
     req.session.my_var = req.session.my_var || 0;
     req.session.my_var++;
@@ -127,16 +134,16 @@ app.get('/try-session', (req, res)=>{
         my_var: req.session.my_var,
         session: req.session,
     });
-})
+});
 
-
-app.use('/admins', require(__dirname + '/routes/admins'));
+app.use("/admins", require(__dirname + "/routes/admins"));
 
 //use接受各種方式拜訪
 app.use(express.static("public"));
 app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
-//routs address-book
-app.use('/address-book', require(__dirname + '/routes/address-book'));
+app.use("/joi", express.static("node_modules/joi/dist"));
+//routers address-book
+app.use("/address-book", require(__dirname + "/routes/address-book"));
 
 //get只接受用戶端用get拜訪
 app.get("/", function (req, res) {

@@ -5,6 +5,7 @@ const {
     toDatetimeString,
 } = require(__dirname + '/../modules/date-tools');
 const moment = require('moment-timezone');
+const Joi = require('joi');
 const upload = require(__dirname + '/../modules/upload-images')
 
 const router = express.Router(); // 建立 router 物件
@@ -80,7 +81,39 @@ router.get('/add', async (req, res)=>{
 });
 
 router.post('/add', upload.none(), async (req, res)=>{
-    res.json(req.body);
+    const schema = Joi.object({
+        name: Joi.string()
+            .min(3)
+            .required()
+            .label('姓名必填'),
+        email: Joi.string()
+            .email()
+            .required(),
+        mobile: Joi.string(),
+        birthday: Joi.any(),
+        address: Joi.string(),
+    });
+
+    // 自訂訊息
+    // https://stackoverflow.com/questions/48720942/node-js-joi-how-to-display-a-custom-error-messages
+
+    console.log( schema.validate(req.body, {abortEarly: false}) );
+    /*
+    const sql = "INSERT INTO `address_book`(`name`, `email`, `mobile`, `birthday`, `address`, `created_at`) VALUES (?, ?, ?, ?, ?, NOW())";
+    const {name, email, mobile, birthday, address} = req.body;
+    const [result] = await db.query(sql, [name, email, mobile, birthday, address]);
+
+    // {"fieldCount":0,"affectedRows":1,"insertId":1113,"info":"","serverStatus":2,"warningStatus":0}
+    res.json(result);
+    */
+    const sql = "INSERT INTO `address_book` SET ?";
+    const birthday = req.body.birthday || null;
+    const insertData = {...req.body, birthday, created_at: new Date()};
+    const [result] = await db.query(sql, [insertData]);
+
+    // {"fieldCount":0,"affectedRows":1,"insertId":1113,"info":"","serverStatus":2,"warningStatus":0}
+    res.json(result);
+
 });
 
 router.get('/', async (req, res)=>{
