@@ -76,11 +76,26 @@ const getListHandler = async (req, res)=>{
 
     return output;
 };
+
+router.use((req, res, next)=>{
+    /*
+    if(! req.session.admin){
+        return res.redirect('/');
+    }
+    */
+    next();
+});
 router.get('/add', async (req, res)=>{
+    if(! req.session.admin){
+        return res.redirect('/');
+    }
     res.render('address-book/add');
 });
 
 router.post('/add', upload.none(), async (req, res)=>{
+    if(! req.session.admin){
+        return res.redirect('/');
+    }
     const schema = Joi.object({
         name: Joi.string()
             .min(3)
@@ -125,8 +140,12 @@ router.get('/', async (req, res)=>{
         case 420:
             return res.redirect(`?page=${output.totalPages}`);
             break;
+    }    if(! req.session.admin){
+        res.render('address-book/main-noadmin', output);
+    } else {
+        res.render('address-book/main', output);
     }
-    res.render('address-book/main', output);
+
 });
 router.get('/api', async (req, res)=>{
     const output = await getListHandler(req, res);

@@ -5,10 +5,18 @@ const multer = require('multer');
 const upload = require(__dirname + '/modules/upload-images');
 const session = require('express-session');
 const moment = require('moment-timezone');
+const axios = require('axios');
+const bcrypt = require('bcryptjs');
+
+const {
+    toDateString,
+    toDatetimeString,
+} = require(__dirname + '/modules/date-tools');
 
 const db = require(__dirname + '/modules/mysql-connect');
 const MysqlStore = require('express-mysql-session')(session);
 const sessionStore = new MysqlStore({}, db);
+const cors = require('cors')
 
 const app = express();
 
@@ -16,6 +24,18 @@ app.set("view engine", "ejs");
 app.set('case sensitive routing', true);
 
 // Top-level middlewares
+
+const corsOptions = {
+    credentials: true,
+    origin: (origin, cb)=>{
+        console.log({origin});
+        cb(null, true);
+    }
+};
+
+app.use(cors(corsOptions));
+
+
 app.use(session({
     saveUninitialized: false,
     resave: false,
@@ -28,7 +48,13 @@ app.use(session({
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());
 app.use((req, res, next)=>{
-    res.locals.shinder = '哈囉';
+    // res.locals.shinder = '哈囉';
+
+    // template helper functions
+    res.locals.toDateString = toDateString;
+    res.locals.toDatetimeString = toDatetimeString;
+    res.locals.session = req.session;
+
     next();
 });
 
@@ -112,9 +138,59 @@ app.get('/try-session', (req, res)=>{
 })
 
 app.use('/address-book', require(__dirname + '/routes/address-book'));
+app.use('/carts', require(__dirname + '/routes/carts'));
+
+app.get('/yahoo', async (req, res)=>{
+    axios.get('https://tw.yahoo.com/')
+    .then(function (response) {
+      // handle success
+        console.log(response);
+        res.send(response.data);
+    })
+});
+app.route('/login')
+    .get(async (req, res)=>{
+        res.render('login');
+    })
+    .post(async (req, res)=>{
+        const output = {
+            success: false,
+            error: '',
+            code: 0,
+        };
+        const sql = "SELECT * FROM admins WHERE account=?";
+        const [r1] = await db.query(sql, [req.body.account]);
+
+        if(! r1.length){
+            // 帳號錯誤
+            output.code = 401;
+            output.error = '帳密錯誤'
+            return res.json(output)
+        }
+        //const row = r1[0];
+
+        output.success = await bcrypt.compare(req.body.password, r1[0].pass_hash);
+        if(! output.success){
+            // 密碼錯誤
+            output.code = 402;
+            output.error = '帳密錯誤'
+        } else {
+            req.session.admin = {
+                sid: r1[0].sid,
+                account: r1[0].account,
+            };
+        }
+
+        res.json(output);
+    });
 
 
+app.get("/logout", (req, res) => {
+    delete req.session.admin;
+    res.redirect("/");
+});
 
+    
 app.get("/", (req, res) => {
     res.render("main", { name: "Shinder" });
 });
@@ -122,6 +198,7 @@ app.get("/", (req, res) => {
 // ------- static folder -----------
 app.use(express.static("public"));
 app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
+app.use("/joi", express.static("node_modules/joi/dist"));
 
 // ------- 404 -----------
 app.use((req, res) => {

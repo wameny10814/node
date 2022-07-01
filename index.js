@@ -12,22 +12,27 @@ const db = require(__dirname + "/modules/mysql-connect");
 const MysqlStore = require("express-mysql-session")(session);
 const sessionStore = new MysqlStore({}, db);
 const axios = require("axios");
+const bcrypt = require('bcryptjs');
+const cors =require("cors");
 
 const app = express();
 //設定
 app.set("view engine", "ejs");
+// app.use(require("cors")());
+const corsOptions = {
+    credentials: true,
+    origin: (origin, cb)=>{
+        console.log({origin});
+        cb(null, true);
+    }
+};
+app.use(cors(corsOptions));
+
 //toplevel mideeleware
 //資料進來依照content type去做解析
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-app.use((req, res, next) => {
-    // res.locals.shinder = '哈囉';
 
-    // template helper functions
-    res.locals.toDateString = toDateString;
-    res.locals.toDatetimeString = toDatetimeString;
-    next();
-});
 //session設定
 app.use(
     session({
@@ -41,12 +46,69 @@ app.use(
     })
 );
 
+app.use((req, res, next) => {
+    // res.locals.shinder = '哈囉';
+
+    // template helper functions
+    res.locals.toDateString = toDateString;
+    res.locals.toDatetimeString = toDatetimeString;
+    res.locals.session = req.session; //req session 設定進locals session 給前端使用
+    next();
+});
+
 app.get("/yahoo", async (req, res) => {
     axios.get("https://tw.yahoo.com/").then(function (response) {
         // handle success
         console.log(response);
         res.send(response.data);
     });
+});
+
+//會員登入 使用bcryptjs加密
+app.route('/login')
+    .get(async (req, res)=>{
+        res.render('login');
+    })
+    .post(async (req, res)=>{
+        const output = {
+            success: false,
+            error: '',
+            code: 0,
+        };
+        const sql = "SELECT * FROM admin WHERE account=?";
+        const [r1] = await db.query(sql, [req.body.account]);
+
+        if(! r1.length){
+            // 帳號錯誤
+            output.code = 401;
+            output.error = '帳密錯誤'
+            return res.json(output)
+        }
+        //const row = r1[0];
+
+        output.success = await bcrypt.compare(req.body.password, r1[0].pass_hash);
+        console.log(await bcrypt.compare(req.body.password, r1[0].pass_hash));
+        if(! output.success){
+            // 密碼錯誤
+            output.code = 402;
+            output.error = '帳密錯誤'
+        }else {
+            //帳密正確req 放進session
+            req.session.admin = {
+                sid: r1[0].sid,
+                account: r1[0].account,
+            };
+        }
+
+
+        res.json(output);
+    });
+
+//會員登出
+//刪除locals session admin
+app.get("/logout", (req, res) => {
+    delete req.session.admin;
+    res.redirect("/");
 });
 
 //middleware 中介軟體
@@ -144,6 +206,7 @@ app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
 app.use("/joi", express.static("node_modules/joi/dist"));
 //routers address-book
 app.use("/address-book", require(__dirname + "/routes/address-book"));
+app.use('/carts', require(__dirname + '/routes/carts'));
 
 //get只接受用戶端用get拜訪
 app.get("/", function (req, res) {
