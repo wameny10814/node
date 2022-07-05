@@ -14,6 +14,7 @@ const sessionStore = new MysqlStore({}, db);
 const axios = require("axios");
 const bcrypt = require('bcryptjs');
 const cors =require("cors");
+const nodemailer = require('nodemailer');
 
 const app = express();
 //設定
@@ -32,6 +33,59 @@ app.use(cors(corsOptions));
 //資料進來依照content type去做解析
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+
+//try nodmailer
+//宣告發信物件
+
+// const transporter = nodemailer.createTransport({
+//     service: 'OAuth2',
+//     auth: {
+//         user: 'sunnymail0705@gmail.com',
+//         pass: 'earningto666'
+//     }
+// });
+
+const transporter = nodemailer.createTransport({
+    host: 'sunnymail0705@gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+      type: "OAuth2",
+      user: process.env.ACCOUNT,
+      clientId: process.env.CLINENTID,
+      clientSecret: process.env.CLINENTSECRET,
+      refreshToken: process.env.REFRESHTOKEN,
+      accessToken: process.env.ACCESSTOKEN,
+    }
+  });
+
+var options = {
+    //寄件者
+    from: 'sunnymail0705@gmail.com',
+    //收件者
+    to: 'wameny10814@gmail.com', 
+    //副本
+    // cc: 'account3@gmail.com',
+    //密件副本
+    // bcc: 'account4@gmail.com',
+    //主旨
+    subject: '這是 node.js 發送的測試信件', // Subject line
+    //純文字
+    text: 'Hello world2', // plaintext body
+    //嵌入 html 的內文
+    html: '<h2>Why and How</h2> <p>The <a href="http://en.wikipedia.org/wiki/Lorem_ipsum" title="Lorem ipsum - Wikipedia, the free encyclopedia">Lorem ipsum</a> text is typically composed of pseudo-Latin words. It is commonly used as placeholder text to examine or demonstrate the visual effects of various graphic design. Since the text itself is meaningless, the viewers are therefore able to focus on the overall layout without being attracted to the text.</p>', 
+    //附件檔案
+  
+};
+
+
+transporter.sendMail(options, function(error, info){
+    if(error){
+        console.log(error);
+    }else{
+        console.log('訊息發送: ' + info.response);
+    }
+});
 
 //session設定
 app.use(
