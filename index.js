@@ -1,4 +1,4 @@
-// require("dotenv").config();
+require("dotenv").config();
 const express = require("express");
 //multer處理檔案上傳
 const multer = require("multer");
@@ -35,70 +35,33 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 
-async function main() {
-    // Generate test SMTP service account from ethereal.email
-    // Only needed if you don't have a real mail account for testing
-    let testAccount = await nodemailer.createTestAccount();
+const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    auth: {
+      user: 'sunnymail0705@gmail.com',
+      pass: 'uyigjlahpxbynays ',
+    },
+  });
+
+var options = {
+    //寄件者
+    from: 'sunnymail0705@gmail.com',
+    //收件者
+    to: 'wameny10814@gmail.com', 
+    //副本
+    // cc: 'account3@gmail.com',
+    //密件副本
+    // bcc: 'account4@gmail.com',
+    //主旨
+    subject: '這是 node.js 發送的測試信件', // Subject line
+    //純文字
+    text: 'Hello world2', // plaintext body
+    //嵌入 html 的內文
+    html: '<h2>Why and How</h2> <p>The <a href="http://en.wikipedia.org/wiki/Lorem_ipsum" title="Lorem ipsum - Wikipedia, the free encyclopedia">Lorem ipsum</a> text is typically composed of pseudo-Latin words. It is commonly used as placeholder text to examine or demonstrate the visual effects of various graphic design. Since the text itself is meaningless, the viewers are therefore able to focus on the overall layout without being attracted to the text.</p>', 
+    //附件檔案
   
-    // create reusable transporter object using the default SMTP transport
-    let transporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: testAccount.user, // generated ethereal user
-        pass: testAccount.pass, // generated ethereal password
-      },
-    });
-  
-    // send mail with defined transport object
-    let info = await transporter.sendMail({
-      from: '"Fred Foo 👻" <foo@example.com>', // sender address
-      to: "wameny10814@gmail.com", // list of receivers
-      subject: "Hello ✔", // Subject line
-      text: "Hello world?", // plain text body
-      html: "<b>Hello world?</b>", // html body
-    });
-  
-    console.log("Message sent: %s", info.messageId);
-    // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
-  
-    // Preview only available when sending through an Ethereal account
-    console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-    // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
-  }
-  
-  main().catch(console.error);
-
-
-//try nodmailer
-//宣告發信物件
-
-// const transporter = nodemailer.createTransport({
-//     service: 'OAuth2',
-//     auth: {
-//         user: 'sunnymail0705@gmail.com',
-//         pass: 'earningto666'
-//     }
-// });
-
-// const transporter = nodemailer.createTransport({
-//     host: 'sunnymail0705@gmail.com',
-//     port: 465,
-//     secure: true,
-//     auth: {
-//       type: "OAuth2",
-//       user: process.env.ACCOUNT,
-//       clientId: process.env.CLINENTID,
-//       clientSecret: process.env.CLINENTSECRET,
-//       refreshToken: process.env.REFRESHTOKEN,
-//       accessToken: process.env.ACCESSTOKEN,
-//     }
-//   });
-
-// console.log(process.env)
-
-
+};
 
 
 // transporter.sendMail(options, function(error, info){
@@ -275,6 +238,8 @@ app.get("/try-session", (req, res) => {
 });
 
 app.use("/admins", require(__dirname + "/routes/admins"));
+//final proj
+app.use("/member", require(__dirname + "/routes/member"));
 
 //use接受各種方式拜訪
 app.use(express.static("public"));
