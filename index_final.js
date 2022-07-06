@@ -15,6 +15,8 @@ const axios = require("axios");
 const bcrypt = require('bcryptjs');
 const cors =require("cors");
 
+app.use('/member', require(__dirname + '/routes/member'));
+
 app.route('/login')
     .get(async (req, res)=>{
         res.render('login');

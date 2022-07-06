@@ -93,6 +93,7 @@ router.get('/add', async (req, res)=>{
 });
 
 router.post('/add', upload.none(), async (req, res)=>{
+    //判定是否有登入 登入才能有新增權限
     if(! req.session.admin){
         return res.redirect('/');
     }

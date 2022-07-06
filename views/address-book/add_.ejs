@@ -96,7 +96,9 @@
             birthday: Joi.any(),
             address: Joi.string(),
         });
-        console.log( schema.validate(dataObj, {abortEarly: false}) );
+
+        //dataobj 資料丟進schema驗證(validate) abortEarly: false-->假如有一個欄位錯誤,也會全部欄位繼續檢查
+        console.log( 'test:',schema.validate(dataObj, {abortEarly: false}) );
 
         const usp = new URLSearchParams(fd);
 

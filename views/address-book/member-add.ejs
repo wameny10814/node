@@ -1,0 +1,83 @@
+<%- include('../parts/html-head') %> <%- include('../parts/navbar') %>
+
+<div class="container">
+    <div class="row">
+        <div class="col-lg-6">
+            <h3>會員註冊</h3>
+            <form name="form1" onsubmit="sendForm(event)">
+                <div class="mb-3">
+                    <label for="" class="form-label">account</label>
+                    <input type="text" class="form-control" name="account" />
+                    <div class="form-text"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="" class="form-label">password</label>
+                    <input type="password" class="form-control" name="password" />
+                    <div class="form-text"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="" class="form-label">password2</label>
+                    <input type="password" class="form-control" name="password2" />
+                    <div class="form-text"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="" class="form-label">email</label>
+                    <input type="email" class="form-control" name="email" />
+                    <div class="form-text"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="" class="form-label">birthday</label>
+                    <input type="date" class="form-control" name="birthday" />
+                    <div class="form-text"></div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<%- include('../parts/scripts') %>
+<script>
+    const Joi = joi;
+    function sendForm(event) {
+        event.preventDefault();
+
+        const fd = new FormData(document.form1);
+
+        const dataObj = {};
+        for (let i of fd.entries()) {
+            console.log(i);
+
+            dataObj[i[0]] = i[1];
+        }
+        console.log(dataObj); // 轉換成物件
+
+        const schema = Joi.object({
+            name: Joi.string()
+                .min(3)
+                .required()
+                .messages({ "string.empty": "姓名必填" }),
+            email: Joi.string().email({ tlds: false }).required(),
+            mobile: Joi.string(),
+            birthday: Joi.any(),
+            address: Joi.string(),
+        });
+
+        //dataobj 資料丟進schema驗證(validate) abortEarly: false-->假如有一個欄位錯誤,也會全部欄位繼續檢查
+        console.log("test:", schema.validate(dataObj, { abortEarly: false }));
+
+        const usp = new URLSearchParams(fd);
+
+        // multipart-formdata
+        fetch("", {
+            method: "POST",
+            body: fd,
+        })
+            .then((r) => r.json())
+            .then((obj) => {
+                console.log(obj);
+            });
+    }
+</script>
+<%- include('../parts/html-foot') %>
